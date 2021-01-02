@@ -149,6 +149,7 @@ PlayState.init = function (data) {
     this.hasKey = false;
 
     this.level = (data.level || 0) % LEVEL_COUNT;
+
 };
 
 // Load game assets.
@@ -408,21 +409,62 @@ PlayState._onHeroVsKey = function (hero, key) {
 
 PlayState._onHeroVsDoor = function (hero, door) {
     this.sfx.door.play();
-    this.game.state.restart(true, false, { level: this.level + 1 });
+    console.log(this.level)
+    console.log(LEVEL_COUNT)
+    if (this.level + 1 == LEVEL_COUNT) {
+        this.game.state.start('win')
+    } else {
+        this.game.state.restart(true, false, { level: this.level + 1 });
+    }
 }
+
+
+/******************************************************
+  Win State
+*******************************************************/
+WinState = {};
+
+WinState.preload = function () {
+    this.game.load.image('background', 'images/background.png');
+}
+
+WinState.create = function () {
+    this.game.add.image(0, 0, 'background');
+
+    let winLabel = this.game.add.text(80, 80, 'YOU WON!',
+        {font: '50px Arial', fill: "#760e99"});
+    let startLabel = this.game.add.text(80, this.game.world.height - 80,
+        'Press the "W" key to restart',
+        {font: '25px Arial', fill: '#107003'})
+
+    let wKey = this.game.input.keyboard.addKey(Phaser.KeyCode.W);
+    wKey.onDown.addOnce(this.restart, this);
+}
+
+WinState.restart = function () {
+    this.game.state.start('menu');
+}
+
+
 
 /******************************************************
   Menu State
 *******************************************************/
 MenuState = {};
 
+MenuState.preload = function () {
+    this.game.load.image('background', 'images/background.png');
+}
+
 MenuState.create = function () {
+    this.game.add.image(0, 0, 'background');
+
     let nameLabel = this.game.add.text(80, 80, 'Adventures of Leat',
-        {font: '50px Arial', fill: '#ffffff'})
+        {font: '50px Arial', fill: '#107003'})
 
     let startLabel = this.game.add.text(80, this.game.world.height - 80,
-        'press the "W" key to start',
-        {font: '25px Arial', fill: '#ffffff'})
+        'Press the "W" key to start',
+        {font: '25px Arial', fill: '#107003'})
 
     let wKey = this.game.input.keyboard.addKey(Phaser.KeyCode.W);
     wKey.onDown.addOnce(this.start, this);
@@ -443,6 +485,7 @@ window.onload = function () {
     // the screen consists of: loading screen, main menu, level, etc
     game.state.add('play', PlayState);
     game.state.add('menu', MenuState);
+    game.state.add('win', WinState);
 
     game.state.start('menu');
 
