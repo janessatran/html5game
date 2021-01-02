@@ -412,6 +412,27 @@ PlayState._onHeroVsDoor = function (hero, door) {
 }
 
 /******************************************************
+  Menu State
+*******************************************************/
+MenuState = {};
+
+MenuState.create = function () {
+    let nameLabel = this.game.add.text(80, 80, 'Adventures of Leat',
+        {font: '50px Arial', fill: '#ffffff'})
+
+    let startLabel = this.game.add.text(80, this.game.world.height - 80,
+        'press the "W" key to start',
+        {font: '25px Arial', fill: '#ffffff'})
+
+    let wKey = this.game.input.keyboard.addKey(Phaser.KeyCode.W);
+    wKey.onDown.addOnce(this.start, this);
+}
+
+MenuState.start = function () {
+    this.game.state.start('play', true, false, {level: 0})
+}
+
+/******************************************************
   Window event listeners
 *******************************************************/
 window.onload = function () {
@@ -421,9 +442,11 @@ window.onload = function () {
     // A game state represents one "screen" in the game
     // the screen consists of: loading screen, main menu, level, etc
     game.state.add('play', PlayState);
-    // game.state.start('play');
+    game.state.add('menu', MenuState);
+
+    game.state.start('menu');
 
     // true - keep cache
     // false - don't keey existing worl dobjects
-    game.state.start('play', true, false, {level: 0})
+    // game.state.start('play', true, false, {level: 0})
 }
