@@ -412,7 +412,7 @@ PlayState._onHeroVsDoor = function (hero, door) {
     console.log(this.level)
     console.log(LEVEL_COUNT)
     if (this.level + 1 == LEVEL_COUNT) {
-        this.game.state.start('win')
+        this.game.state.start('win', true, false, { coins: this.coinPickupCount})
     } else {
         this.game.state.restart(true, false, { level: this.level + 1 });
     }
@@ -424,15 +424,32 @@ PlayState._onHeroVsDoor = function (hero, door) {
 *******************************************************/
 WinState = {};
 
+WinState.init = function (data) {
+    console.log(data)
+    if (data != undefined) {
+        this.coinPickupCount = data.coins;
+    } else {
+        this.coinPickupCount = 0;
+    }
+};
+
 WinState.preload = function () {
     this.game.load.image('background', 'images/background.png');
+    this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
 }
 
 WinState.create = function () {
     this.game.add.image(0, 0, 'background');
+    let animatedCoinIcon = this.game.add.sprite(80, 215, 'coin')
+    animatedCoinIcon.anchor.set(0.5, 0.5)
+    animatedCoinIcon.animations.add('rotate', [0,1,2,1], 6, true);
+    animatedCoinIcon.animations.play('rotate')
 
-    let winLabel = this.game.add.text(80, 80, 'YOU WON!',
+    let winLabel = this.game.add.text(80, 80, 'Yay!',
         {font: '50px Arial', fill: "#760e99"});
+    let coinLabel = this.game.add.text(100, 200, 'You collected ' + this.coinPickupCount + ' coins. Nice job!',
+        {font: '30px Arial', fill: "#760e99"});
+
     let startLabel = this.game.add.text(80, this.game.world.height - 80,
         'Press the "W" key to restart',
         {font: '25px Arial', fill: '#107003'})
