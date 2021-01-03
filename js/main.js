@@ -150,6 +150,7 @@ PlayState.init = function (data) {
 
     this.level = (data.level || 0) % LEVEL_COUNT;
 
+    this.bgMusicPlaying = data.bgMusicPlaying || false;
 };
 
 // Load game assets.
@@ -193,6 +194,7 @@ PlayState.preload = function () {
     this.game.load.audio('sfx:stomp', 'audio/stomp.wav')
     this.game.load.audio('sfx:key', 'audio/key.wav')
     this.game.load.audio('sfx:door', 'audio/door.wav')
+    this.game.load.audio('background', 'audio/background-music.wav')
 }
 /******************************************************
   PlayState Setup Methods
@@ -244,6 +246,14 @@ PlayState._loadLevel = function (data) {
     // set gravity in level instead of init for more flexibility per level!
     const GRAVITY = 1200;
     this.game.physics.arcade.gravity.y = GRAVITY;
+
+    console.log(this.bgMusicPlaying)
+    if (this.bgMusicPlaying === false) {
+        this.music = this.game.add.audio('background');
+        this.music.loop = true;
+        this.music.play();
+        this.bgMusicPlaying = true;
+    }
 }
 
 
@@ -397,7 +407,7 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
     } else {
         // game over
         this.sfx.stomp.play();
-        this.game.state.restart(true, false, { level: this.level});
+        this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
     }
 }
 
@@ -413,8 +423,9 @@ PlayState._onHeroVsDoor = function (hero, door) {
     console.log(LEVEL_COUNT)
     if (this.level + 1 == LEVEL_COUNT) {
         this.game.state.start('win', true, false, { coins: this.coinPickupCount})
+        this.music.pause();
     } else {
-        this.game.state.restart(true, false, { level: this.level + 1 });
+        this.game.state.restart(true, false, { level: this.level + 1, bgMusicPlaying: this.bgMusicPlaying});
     }
 }
 
@@ -425,7 +436,6 @@ PlayState._onHeroVsDoor = function (hero, door) {
 WinState = {};
 
 WinState.init = function (data) {
-    console.log(data)
     if (data != undefined) {
         this.coinPickupCount = data.coins;
     } else {
@@ -436,6 +446,7 @@ WinState.init = function (data) {
 WinState.preload = function () {
     this.game.load.image('background', 'images/background.png');
     this.game.load.spritesheet('coin', 'images/coin_animated.png', 22, 22);
+    this.game.load.audio('music', 'audio/win-music.wav')
 }
 
 WinState.create = function () {
@@ -444,6 +455,10 @@ WinState.create = function () {
     animatedCoinIcon.anchor.set(0.5, 0.5)
     animatedCoinIcon.animations.add('rotate', [0,1,2,1], 6, true);
     animatedCoinIcon.animations.play('rotate')
+
+    this.music = this.game.add.audio('music');
+    this.music.loop = true;
+    this.music.play();
 
     let winLabel = this.game.add.text(80, 80, 'Yay!',
         {font: '50px Arial', fill: "#760e99"});
@@ -460,6 +475,7 @@ WinState.create = function () {
 
 WinState.restart = function () {
     this.game.state.start('menu');
+    this.music.pause();
 }
 
 
@@ -471,6 +487,8 @@ MenuState = {};
 
 MenuState.preload = function () {
     this.game.load.image('background', 'images/background.png');
+    this.game.load.audio('music', 'audio/menu-music.wav')
+    this.game.load.image('hero', 'images/hero_stopped.png')
 }
 
 MenuState.create = function () {
@@ -478,17 +496,26 @@ MenuState.create = function () {
 
     let nameLabel = this.game.add.text(80, 80, 'Adventures of Leat',
         {font: '50px Arial', fill: '#107003'})
+    this.game.add.image(nameLabel.width + 100, 83, 'hero');
 
     let startLabel = this.game.add.text(80, this.game.world.height - 80,
         'Press the "W" key to start',
         {font: '25px Arial', fill: '#107003'})
+    let instructionsLabel = this.game.add.text(80, 200,
+        "How to play: Use the up arrow key to jump, and left/right to move.",
+        {font: '25px Arial', fill: '#107003'})
 
     let wKey = this.game.input.keyboard.addKey(Phaser.KeyCode.W);
     wKey.onDown.addOnce(this.start, this);
+
+    this.music = this.game.add.audio('music');
+    this.music.loop = true;
+    this.music.play();
 }
 
 MenuState.start = function () {
     this.game.state.start('play', true, false, {level: 0})
+    this.music.pause();
 }
 
 /******************************************************
