@@ -41,13 +41,17 @@ Hero.prototype.move = function (direction) {
 }
 
 Hero.prototype.jump = function () {
-    const JUMP_SPEED = 600;
+    const JUMP_SPEED = 400;
     let canJump = this.body.touching.down; // check if a body is touching another body
-
-    if (canJump) {
+    if (canJump || this.highJumping) {
         this.body.velocity.y = -JUMP_SPEED;
+        this.highJumping = true;
     }
     return canJump;
+}
+
+Hero.prototype.stopHighJump = function () {
+    this.highJumping = false;
 }
 
 Hero.prototype.bounce = function () {
@@ -138,10 +142,16 @@ PlayState.init = function (data) {
     });
 
     // Subscribe key to signal (event)
+    const JUMP_HOLD = 200;
     this.keys.up.onDown.add(function () {
-        let didJump = this.hero.jump();
-        if (didJump) {
-            this.sfx.jump.play();
+        if (this.keys.up.downDuration(JUMP_HOLD)) {
+            let didJump = this.hero.jump();
+            if (didJump) {
+                this.sfx.jump.play();
+            }
+        }
+        else {
+            this.hero.stopHighJump();
         }
     }, this)
 
