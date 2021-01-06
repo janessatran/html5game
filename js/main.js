@@ -512,7 +512,7 @@ MenuState.create = function () {
         'Press the "W" key to start',
         {font: '25px Arial', fill: '#107003'})
     let instructionsLabel = this.game.add.text(80, 200,
-        "How to play: Use the up arrow key to jump, and left/right to move.",
+        "How to play: \n\nUse the up arrow key to jump, and left/right to move. \nBoost your jump by pressing the up arrow key repeatedly.",
         {font: '25px Arial', fill: '#107003'})
 
     let wKey = this.game.input.keyboard.addKey(Phaser.KeyCode.W);
