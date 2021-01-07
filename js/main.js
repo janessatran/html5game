@@ -4,7 +4,7 @@
 function Hero(game, x, y) {
     // call Phaser.Sprite constructor
     Phaser.Sprite.call(this, game, x, y, 'hero');
-
+    this.dying = false;
     // Adjust the anchor, the point where we handle sprites/images.
     // Anchor: vector that accepts values in the 0 to 1 range.
     // Central point would be (0.5, 0.5).
@@ -19,6 +19,7 @@ function Hero(game, x, y) {
     this.animations.add('run', [1, 2], 8, true); // 8fps looped
     this.animations.add('jump', [3]);
     this.animations.add('fall', [4]);
+    this.animations.add('die', [5,4,5,4,5,4,5,4,5,4], 8)
 }
 
 // Inherit from Phaser.Sprite
@@ -59,11 +60,22 @@ Hero.prototype.bounce = function () {
     this.body.velocity.y = -BOUNCE_SPEED;
 }
 
+Hero.prototype.die = function () {
+  // this removes the sprite from physics operations, so its not taken into account for collissions
+    this.body.enable = false;
+    this.dying = true;
+    this.animations.play('die').onComplete.addOnce(function () {
+        this.kill();
+    }, this);
+}
+
 Hero.prototype._getAnimationName = function() {
     let name = 'stop'; // default animation
 
-    // umping
-    if (this.body.velocity.y < 0) {
+    if (this.dying) {
+        name = 'die';
+    }
+    else if (this.body.velocity.y < 0) {
         name = 'jump';
     }
     // falling - y velocity is positive; not touching platform
@@ -299,6 +311,20 @@ PlayState._createHud = function () {
 }
 
 
+PlayState._createDyingText = function () {
+    // Initiate Phase.RetroFont
+    const DYING_STR = 'OUCH! ';
+    this.textFont = this.game.add.retroFont('font:numbers', 20, 26, DYING_STR, 20);
+
+    let dyingLabelImg = this.game.make.image(400,200, this.textFont);
+    dyingLabelImg.anchor.set(0.5, 0.5);
+
+    this.labels = this.game.add.group();
+    this.labels.add(dyingLabelImg);
+    this.labels.position.set(960 / 2, 300);
+}
+
+
 /******************************************************
   PlayState Spawning Group Methods
 *******************************************************/
@@ -396,7 +422,6 @@ PlayState._handleInput = function() {
     } else {
         this.hero.move(0); // stop
     }
-
 }
 
 /******************************************************
@@ -416,7 +441,9 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
         this.sfx.stomp.play();
     } else {
         // game over
+        hero.die();
         this.sfx.stomp.play();
+        // this.game.state.start('lose', true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying })
         this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
     }
 }
@@ -429,8 +456,6 @@ PlayState._onHeroVsKey = function (hero, key) {
 
 PlayState._onHeroVsDoor = function (hero, door) {
     this.sfx.door.play();
-    console.log(this.level)
-    console.log(LEVEL_COUNT)
     if (this.level + 1 == LEVEL_COUNT) {
         this.game.state.start('win', true, false, { coins: this.coinPickupCount})
         this.music.pause();
@@ -489,6 +514,55 @@ WinState.restart = function () {
 }
 
 
+/******************************************************
+  Lose State
+*******************************************************/
+LoseState = {};
+
+LoseState.init = function (data) {
+    if (data != undefined) {
+        this.level = data.level;
+        this.bgMusicPlaying = data.bgMusicPlaying;
+    } else {
+        this.level = 0;
+        this.bgMusicPlaying = null;
+    }
+};
+
+LoseState.preload = function () {
+    this.game.load.image('background', 'images/background.png');
+    // this.game.load.audio('music', 'audio/win-music.wav')
+}
+
+LoseState.create = function () {
+    this.game.add.image(0, 0, 'background');
+
+    // this.music = this.game.add.audio('music');
+    // this.music.loop = true;
+    // this.music.play();
+
+    let loseLabel = this.game.add.text(80, 80, 'Ouch! You were killed by a spider!',
+        {font: '50px Arial', fill: "#760e99"});
+
+    let instructionsLabel = this.game.add.text(80, this.game.world.height - 80,
+        'Press any key to continue',
+        {font: '25px Arial', fill: '#107003'})
+
+    this.game.input.keyboard.onDownCallback = function (e) {
+        console.log(e)
+        this.game.state.start('play', true, false, {level: this.level})
+    }
+
+}
+
+LoseState.restart = function () {
+    // this.game.state.start('menu');
+    this.game.state.start('play', true, false, {level: this.level, bgMusicPlaying: this.bgMusicPlaying})
+    // this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
+    // this.music.pause();
+}
+
+
 
 /******************************************************
   Menu State
@@ -540,6 +614,7 @@ window.onload = function () {
     game.state.add('play', PlayState);
     game.state.add('menu', MenuState);
     game.state.add('win', WinState);
+    game.state.add('lose', LoseState);
 
     game.state.start('menu');
 
