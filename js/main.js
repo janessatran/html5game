@@ -90,7 +90,6 @@ Hero.prototype._getAnimationName = function() {
 Hero.prototype.update = function () {
     // update sprite animation, if it needs changing
     let animationName = this._getAnimationName();
-    console.log(animationName)
     if (this.animations.name !== animationName) {
         this.animations.play(animationName)
     }
@@ -241,6 +240,8 @@ PlayState.create = function() {
 
     // Add animations
     this.door.animations.add('open', [1,2], 8)
+
+    this.game.camera.onFadeComplete.add(this.transitionToWinState, this);
 }
 
 PlayState._loadLevel = function (data) {
@@ -467,13 +468,25 @@ PlayState._nextLevel = function(){
         this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
     }
     else if (this.level + 1 == LEVEL_COUNT) {
-        this.game.state.start('win', true, false, { coins: this.coinPickupCount})
+        this.fade();
         this.music.pause();
     }
     else {
         this.game.state.restart(true, false, { level: this.level + 1, bgMusicPlaying: this.bgMusicPlaying});
     }
 };
+
+
+PlayState.fade = function () {
+    this.game.camera.fade(0x000000, 2000);
+}
+
+PlayState.transitionToWinState = function () {
+    // don't need this below because the color fade is reset when you change states
+    // this.game.camera.resetFX();
+    this.game.state.start('win', true, false, { coins: this.coinPickupCount})
+}
+
 
 
 /******************************************************
@@ -560,7 +573,6 @@ LoseState.create = function () {
         {font: '25px Arial', fill: '#107003'})
 
     this.game.input.keyboard.onDownCallback = function (e) {
-        console.log(e)
         this.game.state.start('play', true, false, {level: this.level})
     }
 
@@ -613,8 +625,6 @@ MenuState.start = function () {
     this.music.pause();
 }
 
-
-
 /******************************************************
   Window event listeners
 *******************************************************/
@@ -622,6 +632,7 @@ window.onload = function () {
     // Using Phaser.AUTO will render a WEBGL canvas if it's not available, it will
     // fall back to the regular 2D Canvas
     let game = new Phaser.Game(960, 600, Phaser.AUTO, 'game')
+
     // A game state represents one "screen" in the game
     // the screen consists of: loading screen, main menu, level, etc
     game.state.add('play', PlayState);
