@@ -32,7 +32,6 @@ Hero.prototype.move = function (direction) {
     // move the body of the sprite instead
     this.body.velocity.x = direction * SPEED;
 
-
     // Make the hero flip direction if moving left/right
     if (this.body.velocity.x < 0) {
         this.scale.x = -1;
@@ -91,11 +90,11 @@ Hero.prototype._getAnimationName = function() {
 Hero.prototype.update = function () {
     // update sprite animation, if it needs changing
     let animationName = this._getAnimationName();
+    console.log(animationName)
     if (this.animations.name !== animationName) {
         this.animations.play(animationName)
     }
 }
-
 
 /******************************************************
   Spider Object
@@ -238,6 +237,10 @@ PlayState.create = function() {
 
     // Create Scoreboard
     this._createHud();
+
+
+    // Add animations
+    this.door.animations.add('open', [1,2], 8)
 }
 
 PlayState._loadLevel = function (data) {
@@ -269,7 +272,6 @@ PlayState._loadLevel = function (data) {
     const GRAVITY = 1200;
     this.game.physics.arcade.gravity.y = GRAVITY;
 
-    console.log(this.bgMusicPlaying)
     if (this.bgMusicPlaying === false) {
         this.music = this.game.add.audio('background');
         this.music.loop = true;
@@ -443,8 +445,7 @@ PlayState._onHeroVsEnemy = function (hero, enemy) {
         // game over
         hero.die();
         this.sfx.stomp.play();
-        // this.game.state.start('lose', true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying })
-        this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
+        this.game.time.events.add(500, this._nextLevel, this);
     }
 }
 
@@ -455,14 +456,24 @@ PlayState._onHeroVsKey = function (hero, key) {
 }
 
 PlayState._onHeroVsDoor = function (hero, door) {
-    this.sfx.door.play();
-    if (this.level + 1 == LEVEL_COUNT) {
+    // this.sfx.door.play();
+    this.door.animations.play('open')
+    this.game.time.events.add(100, this._nextLevel, this);
+}
+
+
+PlayState._nextLevel = function(){
+    if (this.hero.dying) {
+        this.game.state.restart(true, false, { level: this.level, bgMusicPlaying: this.bgMusicPlaying});
+    }
+    else if (this.level + 1 == LEVEL_COUNT) {
         this.game.state.start('win', true, false, { coins: this.coinPickupCount})
         this.music.pause();
-    } else {
+    }
+    else {
         this.game.state.restart(true, false, { level: this.level + 1, bgMusicPlaying: this.bgMusicPlaying});
     }
-}
+};
 
 
 /******************************************************
@@ -601,6 +612,8 @@ MenuState.start = function () {
     this.game.state.start('play', true, false, {level: 0})
     this.music.pause();
 }
+
+
 
 /******************************************************
   Window event listeners
